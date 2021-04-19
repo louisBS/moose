@@ -20,6 +20,7 @@ WeightGainSpaceIntegralZr::validParams()
   params.addParam<Real>("temperature",1473.15,"Temperature of the cladding (K)");
   params.addRequiredParam<PostprocessorName>("concentration_integral", "The name of the oxygen concentration integral postprocessor");
   params.addParam<Real>("ymax",4,"The mesh y dimension [um]");
+  params.addParam<Real>("zmax",4,"The mesh z dimension [um]");
   params.addRequiredParam<PostprocessorName>("oxide_thickness", "The name of the oxide thickness postprocessor");
   params.addRequiredParam<PostprocessorName>("alpha_thickness", "The name of the alpha layer thickness postprocessor");
   return params;
@@ -31,6 +32,7 @@ WeightGainSpaceIntegralZr::WeightGainSpaceIntegralZr(const InputParameters & par
     _wg(0),
     _C_integral(getPostprocessorValue("concentration_integral")),
     _ymax(getParam<Real>("ymax")),
+    _zmax(getParam<Real>("zmax")),
     _delta(getPostprocessorValue("oxide_thickness")),
     _d_alpha(getPostprocessorValue("alpha_thickness"))
 {
@@ -54,7 +56,7 @@ WeightGainSpaceIntegralZr::execute()
   const Real Zr_PBR(1.55);
 
   // First, convert the integrated concentration in /m² (divide by ymax to cancel integration over y)
-  Real full_weak_integral = _C_integral / _ymax * Czr * 1e-6; ///!!!units!!!
+  Real full_weak_integral = _C_integral / _ymax / _zmax * Czr * 1e-6; ///!!!units!!!
 
   // Then, remove oxide part of the integral.
   // for that, need various interfaces concentrations

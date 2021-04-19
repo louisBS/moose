@@ -227,6 +227,7 @@
     type = WeightGainSpaceIntegralZr
     concentration_integral = weak_concentration_integral
     ymax = 4
+    zmax = 4
     oxide_thickness = oxide_thickness
     alpha_thickness = alpha_thickness
     execute_on = 'timestep_end final'

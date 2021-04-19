@@ -42,6 +42,9 @@ protected:
   /// The y dimension of the mesh  [um]
   Real _ymax;
 
+  /// The z dimension of the mesh  [um]
+  Real _zmax;
+
   /// The oxide thickness [um]
   const PostprocessorValue & _delta;
 
