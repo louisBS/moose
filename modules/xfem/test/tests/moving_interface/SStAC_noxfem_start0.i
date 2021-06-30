@@ -14,10 +14,10 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 400
+  nx = 240
   ny = 40
   xmin = 0
-  xmax = 100
+  xmax = 60
   ymin = 0
   ymax = 10
   elem_type = QUAD4
@@ -32,15 +32,15 @@
 
 [ICs]
   [./ic_Mn]
-    type = FunctionIC
+    type = ConstantIC
     variable = C_Mn
-    function = initial_Mn #'if(x<90, 7.1445,7.1445-7.1445/10*(x-90))' #start at 20 hr, already some Mn left #if(x<90, 7.1445,7.1445-4.8245/10*(x-90))
+    value = 7.15
   [../]
 
   [./ic_Cr]
-    type = FunctionIC
+    type = ConstantIC
     variable = C_Cr
-    function = initial_Cr #'if(x<90, 7.1445,7.1445-7.1445/10*(x-90))' #start at 20 hr, already some Mn left #if(x<90, 7.1445,7.1445-4.8245/10*(x-90))
+    value = 18.06
   [../]
 []
 
@@ -69,24 +69,13 @@
   [./diffusivity_Mn]
     type = GenericConstantMaterial
     prop_names = Mn_diffusion_coefficient
-    prop_values = 0.0273   # [µm²/hr]
+    prop_values = 0.035   # [µm²/hr]
   [../]
   [./diffusivity_Cr]
     type = GenericConstantMaterial
     prop_names = Cr_diffusion_coefficient
-    prop_values = 0.001  #0.012 [µm²/hr]
+    prop_values =  0.076 # 0.0074[µm²/hr]
   [../]
-[]
-
-[Functions]
-  [./initial_Mn]
-     type = ParsedFunction
-     value = 2.15+(7.15-2.15)*erf(0.6408*x)
-   [../]
-   [./initial_Cr]
-      type = ParsedFunction
-      value = 15.52+(18.06-15.52)*erf(1.246*x)
-    [../]
 []
 
 [BCs]
@@ -146,19 +135,26 @@
     postprocessor = two_Mn_flux
   [../]
 
-  [./left_Mn_Robin_C]
-    type = PostprocessorDirichletBC
-    variable = C_Mn
-    boundary = left
-    postprocessor = Robin_Mn_concentration
-  [../]
-
-#  [./left_Mn_Robin_flux]
-#    type = PostprocessorNeumannBC
+#  [./left_Mn_Robin_analytical]
+#    type = FunctionDirichletBC
 #    variable = C_Mn
 #    boundary = left
-#    postprocessor = Robin_Mn_flux
+#    function = MO_boundary_Mn
 #  [../]
+
+#  [./left_Mn_Robin_C]
+#    type = PostprocessorDirichletBC
+#    variable = C_Mn
+#    boundary = left
+#    postprocessor = Robin_Mn_concentration
+#  [../]
+
+  [./left_Mn_Robin_flux]
+    type = PostprocessorNeumannBC
+    variable = C_Mn
+    boundary = left
+    postprocessor = Robin_Mn_flux
+  [../]
 []
 
 [Postprocessors]
@@ -176,14 +172,15 @@
     value = leaving_Mn_flux
     scaling_factor = -2
     execute_on = 'linear nonlinear timestep_begin timestep_end'
+    outputs = 'none'
   [../]
 
-  [./Robin_Mn_concentration] #[at/nm³]
-    type = ScalePostprocessor
-    value = leaving_Mn_flux
-    scaling_factor = 30 #1/(D*sigma)
-    execute_on = 'linear nonlinear timestep_begin timestep_end'
-  [../]
+#  [./Robin_Mn_concentration] #[at/nm³]
+#    type = ScalePostprocessor
+#    value = leaving_Mn_flux
+#    scaling_factor = 30 #1/(D*sigma)
+#    execute_on = 'linear nonlinear timestep_begin timestep_end'
+#  [../]
 
   [./C_Mn_MO]
     type = SideAverageValue
@@ -195,8 +192,9 @@
   [./Robin_Mn_flux] #[at/nm³]
     type = ScalePostprocessor
     value = C_Mn_MO
-    scaling_factor = 3.3e-2 #D*sigma
+    scaling_factor = -0.045 #D*sigma [µm/hr]
     execute_on = 'linear nonlinear timestep_begin timestep_end'
+    outputs = 'none'
   [../]
 
   [./leaving_Cr_flux] #[(at/nm³/µm)*µm²/hr = at/nm³*µm/hr]
@@ -212,25 +210,29 @@
     value = leaving_Mn_flux
     scaling_factor = -1
     execute_on = 'linear nonlinear timestep_begin timestep_end'
+    outputs = 'none'
   [../]
 
   [./avg_Mn_in_metal] #[at/nm³]
     type = ElementAverageValue #IntegralVariablePostprocessor
     variable = C_Mn
     execute_on = 'linear nonlinear timestep_begin timestep_end'
+    outputs = 'none'
   [../]
 
   [./Mn_in_metal] #[at/nm³*µm]
     type = ScalePostprocessor
     value = avg_Mn_in_metal
-    scaling_factor = 100 #xmax [µm]
+    scaling_factor = 60 #xmax [µm]
     execute_on = 'linear nonlinear timestep_begin timestep_end'
+    outputs = 'none'
   [../]
 
   [./change_Mn_in_metal] #[at/nm³*µm]
     type = ChangeOverTimestepPostprocessor
     postprocessor = Mn_in_metal
     execute_on = 'linear nonlinear timestep_begin timestep_end'
+    outputs = 'none'
   [../]
 
   [./derivative_Mn_in_metal] #[at/nm³*µm/hr]
@@ -244,19 +246,22 @@
     type = ElementAverageValue #IntegralVariablePostprocessor
     variable = C_Cr
     execute_on = 'linear nonlinear timestep_begin timestep_end'
+    outputs = 'none'
   [../]
 
   [./Cr_in_metal] #[at/nm³*µm]
     type = ScalePostprocessor
     value = avg_Cr_in_metal
-    scaling_factor = 100 #xmax [µm]
+    scaling_factor = 60 #xmax [µm]
     execute_on = 'linear nonlinear timestep_begin timestep_end'
+    outputs = 'none'
   [../]
 
   [./change_Cr_in_metal] #[at/nm³*µm]
     type = ChangeOverTimestepPostprocessor
     postprocessor = Cr_in_metal
     execute_on = 'linear nonlinear timestep_begin timestep_end'
+    outputs = 'none'
   [../]
 
   [./derivative_Cr_in_metal] #[at/nm³*µm/hr]
@@ -271,6 +276,7 @@
     value = leaving_Cr_flux
     scaling_factor = -1
     execute_on = 'linear nonlinear timestep_begin timestep_end'
+    outputs = 'none'
   [../]
 
   [./oxide_growth_rate] #[µm/hr]
@@ -284,14 +290,27 @@
     value = oxide_growth_rate
   [../]
 
-  [./pos_bcc]
-    type = FindValueOnLine
-    target = 3.80
-    v = C_Mn
+
+#  [./pos_bcc]
+#    type = FindValueOnLine
+#    target = 3.80
+#    v = C_Mn
+#    start_point = '0 5 0'
+#    end_point = '100 5 0'
+#    tol = 1e-3
+#    execute_on = 'timestep_end'
+#  [../]
+[]
+
+[VectorPostprocessors]
+  [./Mn_profile]
+    type = LineValueSampler
     start_point = '0 5 0'
-    end_point = '100 5 0'
-    tol = 1e-3
-    execute_on = 'timestep_end'
+    end_point = '60 5 0'
+    sort_by = x
+    num_points = 241
+    outputs = csv
+    variable = 'C_Mn'
   [../]
 []
 
@@ -307,9 +326,9 @@
   nl_rel_tol = 1e-7
   nl_abs_tol = 1e-7
 
-  start_time = 10
+  start_time = -10
   dt = 10
-  num_steps = 99
+  num_steps = 201
 []
 
 
